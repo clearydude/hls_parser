@@ -1,4 +1,5 @@
 mod models;
+mod parser;
 
 fn main() {
     //    let filename = "master_unenc_hdr10_all.m3u8";
@@ -10,8 +11,6 @@ fn main() {
     //
     //    println!("With text:\n{}", contents);
 }
-
-
 
 ///// A media playlist file containing the I-frames of a
 ///// multimedia presentation.

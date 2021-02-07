@@ -1,16 +1,16 @@
-use std::convert::TryFrom;
 use std::collections::HashMap;
+use std::convert::TryFrom;
 
 #[derive(Debug, PartialEq)]
 struct Resolution {
     width: usize,
-    height: usize
+    height: usize,
 }
 
 #[derive(Debug, PartialEq)]
 enum VideoRange {
     PQ,
-    SDR
+    SDR,
 }
 
 // defined by https://tools.ietf.org/html/draft-pantos-hls-rfc8216bis-00
@@ -76,45 +76,6 @@ mod tests {
     use super::*;
     use std::convert::TryInto;
 
-    fn parse_attr_list_to_map(attr_str: &str) -> HashMap<String, String> {
-        let mut attr_map = HashMap::new();
-
-        println!("String to split {}", attr_str);
-
-        tag!("BANDWIDTH=")
-
-//        let attrs = attr_str.split(",");
-//
-//        for attr in attrs {
-//            println!("Attr: {}", attr);
-//        let mut attr_iter = attr.splitn(2, "=");
-//        let key = attr_iter.next().expect(&format!("Malformed attribute: {} does not contain key", attr));
-//        let value = attr_iter.next().expect(&format!("Malformed attribute: {} does not contain value", attr));
-//        attr_map.insert(key.into(), value.into());
-        }
-
-        attr_map
-    }
-
-    #[test]
-    fn parses_attribute_list_into_key_value_map() {
-        let attr_str = r#"BANDWIDTH=2312764,AVERAGE-BANDWIDTH=1919803,CODECS="ec-3,hvc1.2.4.L63.90",RESOLUTION=640x360,FRAME-RATE=23.97,VIDEO-RANGE=PQ,AUDIO="atmos",CLOSED-CAPTIONS=NONE"#;
-
-        let mut expected_map: HashMap<String, String> = HashMap::new();
-        expected_map.insert("BANDWIDTH".into(), "2312764".into());
-        expected_map.insert("AVERAGE-BANDWIDTH".into(), "1919803".into());
-        expected_map.insert("CODECS".into(), "ec-3,hvc1.2.4.L63.90".into());
-        expected_map.insert("RESOLUTION".into(), "640x360".into());
-        expected_map.insert("FRAME-RATE".into(), "23.97".into());
-        expected_map.insert("VIDEO-RANGE".into(), "PQ".into());
-        expected_map.insert("AUDIO".into(), "atmos".into());
-        expected_map.insert("CLOSED-CAPTIONS".into(), "NONE".into());
-
-        let parsed_map = parse_attr_list_to_map(attr_str);
-
-//        assert_eq!(parsed_map, expected_map)
-    }
-
     #[test]
     fn parses_variant_stream_attributes() {
         let variant_stream_attr = r#"BANDWIDTH=2312764,AVERAGE-BANDWIDTH=1919803,CODECS="ec-3,hvc1.2.4.L63.90",RESOLUTION=640x360,FRAME-RATE=23.97,VIDEO-RANGE=PQ,AUDIO="atmos",CLOSED-CAPTIONS=NONE"#;
@@ -123,25 +84,28 @@ mod tests {
             bandwidth: 2312764,
             average_bandwidth: 1919803,
             codecs: vec!["ec-3".to_string(), "hvc1.2.4.L63.90".to_string()],
-            resolution: Resolution { width: 640, height: 360 },
+            resolution: Resolution {
+                width: 640,
+                height: 360,
+            },
             frame_rate: 23.97,
             video_range: VideoRange::PQ,
             audio: Some("atmos".to_string()),
-            closed_captions: None
+            closed_captions: None,
         };
 
-//        let parsed_variant_stream_attr: VariantStreamAttrs = variant_stream_attr.try_into().unwrap();
-//
-//        assert_eq!(expected_variant_stream_attr, parsed_variant_stream_attr)
+        //        let parsed_variant_stream_attr: VariantStreamAttrs = variant_stream_attr.try_into().unwrap();
+        //
+        //        assert_eq!(expected_variant_stream_attr, parsed_variant_stream_attr)
     }
-//
-//    #[test]
-//    fn parses_variant_stream() {
-//        let variant_stream_str = r#"
-//            #EXT-X-STREAM-INF:BANDWIDTH=2312764,AVERAGE-BANDWIDTH=1919803,CODECS="ec-3,hvc1.2.4.L63.90",RESOLUTION=640x360,FRAME-RATE=23.97,VIDEO-RANGE=PQ,AUDIO="atmos",CLOSED-CAPTIONS=NONE
-//            hdr10/unenc/900k/vod.m3u8
-//        "#;
-//
-//        println!("{}", variant_stream_str);
-//    }
+    //
+    //    #[test]
+    //    fn parses_variant_stream() {
+    //        let variant_stream_str = r#"
+    //            #EXT-X-STREAM-INF:BANDWIDTH=2312764,AVERAGE-BANDWIDTH=1919803,CODECS="ec-3,hvc1.2.4.L63.90",RESOLUTION=640x360,FRAME-RATE=23.97,VIDEO-RANGE=PQ,AUDIO="atmos",CLOSED-CAPTIONS=NONE
+    //            hdr10/unenc/900k/vod.m3u8
+    //        "#;
+    //
+    //        println!("{}", variant_stream_str);
+    //    }
 }
