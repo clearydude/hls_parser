@@ -4,14 +4,13 @@ mod models;
 mod parser;
 
 fn main() {
-       let filename = "master_unenc_hdr10_all.m3u8";
+    let filename = "master_unenc_hdr10_all.m3u8";
 
-       println!("In file {}", filename);
+    println!("In file {}", filename);
 
-       let contents = fs::read_to_string(filename)
-           .expect("Something went wrong reading the file");
+    let contents = fs::read_to_string(filename).expect("Something went wrong reading the file");
 
-       println!("With text:\n{}", contents);
+    println!("With text:\n{}", contents);
 }
 
 ///// A media playlist file containing the I-frames of a
