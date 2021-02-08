@@ -1,6 +1,3 @@
-use std::collections::HashMap;
-use std::convert::TryFrom;
-
 #[derive(Debug, PartialEq)]
 struct Resolution {
     width: usize,
@@ -74,13 +71,12 @@ struct VariantStream {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::convert::TryInto;
 
     #[test]
     fn parses_variant_stream_attributes() {
-        let variant_stream_attr = r#"BANDWIDTH=2312764,AVERAGE-BANDWIDTH=1919803,CODECS="ec-3,hvc1.2.4.L63.90",RESOLUTION=640x360,FRAME-RATE=23.97,VIDEO-RANGE=PQ,AUDIO="atmos",CLOSED-CAPTIONS=NONE"#;
+        let _variant_stream_attr = r#"BANDWIDTH=2312764,AVERAGE-BANDWIDTH=1919803,CODECS="ec-3,hvc1.2.4.L63.90",RESOLUTION=640x360,FRAME-RATE=23.97,VIDEO-RANGE=PQ,AUDIO="atmos",CLOSED-CAPTIONS=NONE"#;
 
-        let expected_variant_stream_attr = VariantStreamAttrs {
+        let _expected_variant_stream_attr = VariantStreamAttrs {
             bandwidth: 2312764,
             average_bandwidth: 1919803,
             codecs: vec!["ec-3".to_string(), "hvc1.2.4.L63.90".to_string()],
