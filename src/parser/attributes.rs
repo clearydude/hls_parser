@@ -1,7 +1,6 @@
 use nom::branch::alt;
-use nom::bytes::complete::{is_not, tag, take, take_until};
-use nom::character::complete::{char, crlf, line_ending};
-use nom::combinator::rest;
+use nom::bytes::complete::{is_not, tag, take_until};
+
 use nom::multi::separated_list1;
 use nom::sequence::{delimited, separated_pair};
 
