@@ -4,13 +4,21 @@ mod models;
 mod parser;
 
 fn main() {
-    let filename = "master_unenc_hdr10_all.m3u8";
+    //    let filename = "master_unenc_hdr10_all.m3u8";
+    //
+    //    println!("In file {}", filename);
+    //
+    //    let contents = fs::read_to_string(filename).expect("Something went wrong reading the file");
+    //
+    //    println!("With text:\n{}", contents);
+    let body = reqwest::blocking::get(
+        "https://lw.bamgrid.com/2.0/hls/vod/bam/ms02/hls/dplus/bao/master_unenc_hdr10_all.m3u8",
+    )
+    .unwrap()
+    .text()
+    .unwrap();
 
-    println!("In file {}", filename);
-
-    let contents = fs::read_to_string(filename).expect("Something went wrong reading the file");
-
-    println!("With text:\n{}", contents);
+    println!("body = {:?}", body);
 }
 
 ///// A media playlist file containing the I-frames of a
