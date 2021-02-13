@@ -3,7 +3,7 @@ use nom::bytes::complete::{is_not, tag, take_until};
 
 use nom::combinator::map;
 use nom::multi::{many1, separated_list1};
-use nom::sequence::{delimited, pair, separated_pair};
+use nom::sequence::{delimited, separated_pair};
 
 fn parse_value(attr_str: &str) -> nom::IResult<&str, String> {
     map(is_not(",\n"), |attr: &str| attr.to_string())(attr_str)
