@@ -1,9 +1,10 @@
 use nom::branch::alt;
 use nom::bytes::complete::{is_not, tag, take_until};
 
+use nom::character::complete::multispace0;
 use nom::combinator::map;
 use nom::multi::{many1, separated_list1};
-use nom::sequence::{delimited, separated_pair};
+use nom::sequence::{delimited, preceded, separated_pair, terminated};
 
 fn parse_value(attr_str: &str) -> nom::IResult<&str, String> {
     map(is_not(",\n"), |attr: &str| attr.to_string())(attr_str)
@@ -92,11 +93,17 @@ fn parse_simple_tag(simple_tag_str: &str) -> nom::IResult<&str, Tag> {
 }
 
 fn parse_master_playlist(playlist_str: &str) -> nom::IResult<&str, Vec<Tag>> {
-    many1(alt((
-        parse_variant_stream,
-        parse_tag_with_attributes,
-        parse_simple_tag,
-    )))(playlist_str)
+    many1(preceded(
+        multispace0,
+        terminated(
+            alt((
+                parse_simple_tag,
+                parse_variant_stream,
+                parse_tag_with_attributes,
+            )),
+            multispace0,
+        ),
+    ))(playlist_str)
 }
 
 #[cfg(test)]
@@ -110,6 +117,31 @@ mod tests {
 
         let parsed = parse_master_playlist(tags_str);
 
+        let expected = vec![
+            Tag::SimpleTag(SimpleTag {
+                name: "EXTM3U".to_string(),
+            }),
+            Tag::SimpleTag(SimpleTag {
+                name: "EXT-X-INDEPENDENT-SEGMENTS".to_string(),
+            }),
+            Tag::TagWithAttributes(TagWithAttributes {
+                name: "EXT-X-MEDIA:TYPE".to_string(),
+                attributes: vec![
+                    ("TYPE".to_string(), "AUDIO".to_string()),
+                    ("GROUP-ID".to_string(), "aac-128k".to_string()),
+                    ("NAME".to_string(), "English".to_string()),
+                    ("LANGUAGE".to_string(), "en".to_string()),
+                    ("DEFAULT".to_string(), "YES".to_string()),
+                    ("AUTOSELECT".to_string(), "YES".to_string()),
+                    ("CHANNELS".to_string(), "2".to_string()),
+                    (
+                        "URI".to_string(),
+                        "audio/unenc/aac_128k/vod.m3u8".to_string(),
+                    ),
+                ],
+            }),
+        ];
+
         println!("{:#?}", parsed);
     }
 
@@ -117,11 +149,12 @@ mod tests {
     // fn parses_master_playlist() {
     //     let parsed = parse_master_playlist(FILE_STR);
     //
-    //     println!("{:?}", parsed);
+    //     println!("{:#?}", parsed);
     // }
 
     // need to strip whitespace before both lines here
     // there's also whitespace after the uri that we need to strip
+    // strip whitespace around each line?
     #[test]
     fn parses_variant_stream() {
         let tags = "#EXT-X-STREAM-INF:BANDWIDTH=1352519,AVERAGE-BANDWIDTH=959558,CODECS=\"mp4a.40.2,hvc1.2.4.L63.90\",RESOLUTION=640x360,FRAME-RATE=23.97,VIDEO-RANGE=PQ,AUDIO=\"aac-64k\",CLOSED-CAPTIONS=NONE\nhdr10/unenc/900k/vod.m3u8";
