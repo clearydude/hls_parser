@@ -2,7 +2,7 @@ use nom::branch::alt;
 use nom::bytes::complete::{is_not, tag, take_until};
 
 use nom::character::complete::multispace0;
-use nom::combinator::map;
+use nom::combinator::{map, recognize};
 use nom::multi::{many1, separated_list1};
 use nom::sequence::{delimited, preceded, separated_pair, terminated};
 
@@ -29,11 +29,13 @@ fn parse_attribute(attr_str: &str) -> nom::IResult<&str, (String, String)> {
 }
 
 fn parse_attributes(attrs_str: &str) -> nom::IResult<&str, Vec<(String, String)>> {
-    separated_list1(tag(","), parse_attribute)(attrs_str)
+    terminated(separated_list1(tag(","), parse_attribute), multispace0)(attrs_str)
 }
 
 fn parse_tag_name(tag_str: &str) -> nom::IResult<&str, String> {
-    map(take_until(":"), |name: &str| name.to_string())(tag_str)
+    map(preceded(tag("#"), is_not(":\n")), |name: &str| {
+        name.to_string()
+    })(tag_str)
 }
 
 fn parse_tag_and_attributes(tag_str: &str) -> nom::IResult<&str, (String, Vec<(String, String)>)> {
@@ -85,11 +87,7 @@ fn parse_tag_with_attributes(tag_w_attributes_str: &str) -> nom::IResult<&str, T
 }
 
 fn parse_simple_tag(simple_tag_str: &str) -> nom::IResult<&str, Tag> {
-    map(is_not("\n"), |name: &str| {
-        Tag::SimpleTag(SimpleTag {
-            name: name.to_string(),
-        })
-    })(simple_tag_str)
+    map(parse_tag_name, |name| Tag::SimpleTag(SimpleTag { name }))(simple_tag_str)
 }
 
 fn parse_master_playlist(playlist_str: &str) -> nom::IResult<&str, Vec<Tag>> {
@@ -97,9 +95,9 @@ fn parse_master_playlist(playlist_str: &str) -> nom::IResult<&str, Vec<Tag>> {
         multispace0,
         terminated(
             alt((
-                parse_simple_tag,
                 parse_variant_stream,
                 parse_tag_with_attributes,
+                parse_simple_tag,
             )),
             multispace0,
         ),
@@ -110,7 +108,16 @@ fn parse_master_playlist(playlist_str: &str) -> nom::IResult<&str, Vec<Tag>> {
 mod tests {
     use super::*;
 
-    // still need to strip out whitespace
+    #[test]
+    fn strips_whitespace() {}
+
+    #[test]
+    fn strips_hash() {
+        let tag = "#EXTM3U\n";
+        let parsed = parse_tag_name(tag);
+        println!("{:?}", parsed);
+    }
+
     #[test]
     fn parses_all_tags() {
         let tags_str = "#EXTM3U\n#EXT-X-INDEPENDENT-SEGMENTS\n\n#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID=\"aac-128k\",NAME=\"English\",LANGUAGE=\"en\",DEFAULT=YES,AUTOSELECT=YES,CHANNELS=\"2\",URI=\"audio/unenc/aac_128k/vod.m3u8\"\n\n#EXT-X-STREAM-INF:BANDWIDTH=2483789,AVERAGE-BANDWIDTH=1762745,CODECS=\"mp4a.40.2,hvc1.2.4.L90.90\",RESOLUTION=960x540,FRAME-RATE=23.97,VIDEO-RANGE=PQ,AUDIO=\"aac-128k\",CLOSED-CAPTIONS=NONE\nhdr10/unenc/1650k/vod.m3u8\n\n#EXT-X-I-FRAME-STREAM-INF:BANDWIDTH=222552,CODECS=\"hvc1.2.4.L93.90\",RESOLUTION=1280x720,VIDEO-RANGE=PQ,URI=\"hdr10/unenc/3300k/vod-iframe.m3u8\"\n\n";
@@ -125,7 +132,7 @@ mod tests {
                 name: "EXT-X-INDEPENDENT-SEGMENTS".to_string(),
             }),
             Tag::TagWithAttributes(TagWithAttributes {
-                name: "EXT-X-MEDIA:TYPE".to_string(),
+                name: "EXT-X-MEDIA".to_string(),
                 attributes: vec![
                     ("TYPE".to_string(), "AUDIO".to_string()),
                     ("GROUP-ID".to_string(), "aac-128k".to_string()),
@@ -140,21 +147,48 @@ mod tests {
                     ),
                 ],
             }),
+            Tag::TagWithURI(TagWithURI {
+                name: "EXT-X-STREAM-INF".to_string(),
+                attributes: vec![
+                    ("BANDWIDTH".to_string(), "2483789".to_string()),
+                    ("AVERAGE-BANDWIDTH".to_string(), "1762745".to_string()),
+                    (
+                        "CODECS".to_string(),
+                        "mp4a.40.2,hvc1.2.4.L90.90".to_string(),
+                    ),
+                    ("RESOLUTION".to_string(), "960x540".to_string()),
+                    ("FRAME-RATE".to_string(), "23.97".to_string()),
+                    ("VIDEO-RANGE".to_string(), "PQ".to_string()),
+                    ("AUDIO".to_string(), "aac-128k".to_string()),
+                    ("CLOSED-CAPTIONS".to_string(), "NONE".to_string()),
+                ],
+                uri: "hdr10/unenc/1650k/vod.m3u8".to_string(),
+            }),
+            Tag::TagWithAttributes(TagWithAttributes {
+                name: "EXT-X-I-FRAME-STREAM-INF".to_string(),
+                attributes: vec![
+                    ("BANDWIDTH".to_string(), "222552".to_string()),
+                    ("CODECS".to_string(), "hvc1.2.4.L93.90".to_string()),
+                    ("RESOLUTION".to_string(), "1280x720".to_string()),
+                    ("VIDEO-RANGE".to_string(), "PQ".to_string()),
+                    (
+                        "URI".to_string(),
+                        "hdr10/unenc/3300k/vod-iframe.m3u8".to_string(),
+                    ),
+                ],
+            }),
         ];
+
+        assert_eq!(parsed, Ok(("", expected)));
+    }
+
+    #[test]
+    fn parses_master_playlist() {
+        let parsed = parse(FILE_STR);
 
         println!("{:#?}", parsed);
     }
 
-    // #[test]
-    // fn parses_master_playlist() {
-    //     let parsed = parse_master_playlist(FILE_STR);
-    //
-    //     println!("{:#?}", parsed);
-    // }
-
-    // need to strip whitespace before both lines here
-    // there's also whitespace after the uri that we need to strip
-    // strip whitespace around each line?
     #[test]
     fn parses_variant_stream() {
         let tags = "#EXT-X-STREAM-INF:BANDWIDTH=1352519,AVERAGE-BANDWIDTH=959558,CODECS=\"mp4a.40.2,hvc1.2.4.L63.90\",RESOLUTION=640x360,FRAME-RATE=23.97,VIDEO-RANGE=PQ,AUDIO=\"aac-64k\",CLOSED-CAPTIONS=NONE\nhdr10/unenc/900k/vod.m3u8";
@@ -162,7 +196,7 @@ mod tests {
         let parsed = parse_variant_stream(tags);
 
         let expected_variant_stream = TagWithURI {
-            name: "#EXT-X-STREAM-INF".to_string(),
+            name: "EXT-X-STREAM-INF".to_string(),
             attributes: vec![
                 ("BANDWIDTH".to_string(), "1352519".to_string()),
                 ("AVERAGE-BANDWIDTH".to_string(), "959558".to_string()),
@@ -184,7 +218,7 @@ mod tests {
 
     #[test]
     fn parses_i_frame_attribute_list_into_key_value_map() {
-        let attr_str = r#"BANDWIDTH=77758,CODECS="hvc1.2.4.L63.90",RESOLUTION=640x360,VIDEO-RANGE=PQ,URI="hdr10/unenc/900k/vod-iframe.m3u8""#;
+        let attr_str = "BANDWIDTH=77758,CODECS=\"hvc1.2.4.L63.90\",RESOLUTION=640x360,VIDEO-RANGE=PQ,URI=\"hdr10/unenc/900k/vod-iframe.m3u8\"";
 
         let parsed = parse_attributes(attr_str);
 
@@ -207,7 +241,7 @@ mod tests {
 
     #[test]
     fn parses_media_attribute_list_into_key_value_map() {
-        let attr_str = r#"TYPE=AUDIO,GROUP-ID="aac-64k",NAME="English",LANGUAGE="en",DEFAULT=YES,AUTOSELECT=YES,CHANNELS="2",URI="audio/unenc/aac_64k/vod.m3u8""#;
+        let attr_str = "TYPE=AUDIO,GROUP-ID=\"aac-64k\",NAME=\"English\",LANGUAGE=\"en\",DEFAULT=YES,AUTOSELECT=YES,CHANNELS=\"2\",URI=\"audio/unenc/aac_64k/vod.m3u8\"";
 
         let parsed = parse_attributes(attr_str);
 
@@ -233,7 +267,7 @@ mod tests {
 
     #[test]
     fn parses_variant_stream_attribute_list_into_key_value_map() {
-        let attr_str = r#"BANDWIDTH=2312764,AVERAGE-BANDWIDTH=1919803,CODECS="ec-3,hvc1.2.4.L63.90",RESOLUTION=640x360,FRAME-RATE=23.97,VIDEO-RANGE=PQ,AUDIO="atmos",CLOSED-CAPTIONS=NONE"#;
+        let attr_str = "BANDWIDTH=2312764,AVERAGE-BANDWIDTH=1919803,CODECS=\"ec-3,hvc1.2.4.L63.90\",RESOLUTION=640x360,FRAME-RATE=23.97,VIDEO-RANGE=PQ,AUDIO=\"atmos\",CLOSED-CAPTIONS=NONE";
         let parsed = parse_attributes(attr_str);
 
         let expected = Ok((
@@ -255,7 +289,7 @@ mod tests {
 
     #[test]
     fn parses_inner_list() {
-        let attr_str = r#""ec-3,hvc1.2.4.L63.90""#;
+        let attr_str = "\"ec-3,hvc1.2.4.L63.90\"";
         assert_eq!(
             parse_quoted_value(attr_str),
             Ok(("", "ec-3,hvc1.2.4.L63.90".to_string()))
@@ -273,7 +307,7 @@ mod tests {
 
     #[test]
     fn parses_attribute_with_quoted_value_into_key_value() {
-        let attr_str = r#"AUDIO="atmos""#;
+        let attr_str = "AUDIO=\"atmos\"";
         assert_eq!(
             parse_attribute(attr_str),
             Ok(("", ("AUDIO".to_string(), "atmos".to_string())))
@@ -282,7 +316,7 @@ mod tests {
 
     #[test]
     fn parses_attribute_with_list_value_into_key_value() {
-        let attr_str = r#"CODECS="ec-3,hvc1.2.4.L63.90""#;
+        let attr_str = "CODECS=\"ec-3,hvc1.2.4.L63.90\"";
         assert_eq!(
             parse_attribute(attr_str),
             Ok((
