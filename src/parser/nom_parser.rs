@@ -1,5 +1,5 @@
 use nom::character::complete::multispace0;
-use nom::combinator::{all_consuming, cond, map, not, verify};
+use nom::combinator::{all_consuming, map, verify};
 use nom::multi::{many1, separated_list1};
 use nom::sequence::{delimited, pair, preceded, separated_pair, terminated};
 
