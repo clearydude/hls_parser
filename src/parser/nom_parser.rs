@@ -1,12 +1,11 @@
 use nom::character::complete::multispace0;
-use nom::combinator::map;
+use nom::combinator::{all_consuming, cond, map, not, verify};
 use nom::multi::{many1, separated_list1};
-use nom::sequence::{delimited, preceded, separated_pair, terminated};
+use nom::sequence::{delimited, pair, preceded, separated_pair, terminated};
 
 use nom::branch::alt;
 use nom::bytes::complete::{is_not, tag, take_until};
 
-// TODO pull up all crate-specific stuff and leave this nom super generic
 use crate::models::{BasicTag, Tag, TagWithAttributes, TagWithURI};
 
 fn parse_value(attr_str: &str) -> nom::IResult<&str, String> {
@@ -32,10 +31,10 @@ fn parse_attribute(attr_str: &str) -> nom::IResult<&str, (String, String)> {
 }
 
 fn parse_attributes(attrs_str: &str) -> nom::IResult<&str, Vec<(String, String)>> {
-    separated_list1(tag(","), parse_attribute)(attrs_str)
+    terminated(separated_list1(tag(","), parse_attribute), multispace0)(attrs_str)
 }
 
-pub(crate) fn parse_tag_name(tag_str: &str) -> nom::IResult<&str, String> {
+fn parse_tag_name(tag_str: &str) -> nom::IResult<&str, String> {
     map(preceded(tag("#"), is_not(":\n")), |name: &str| {
         name.to_string()
     })(tag_str)
@@ -45,9 +44,13 @@ fn parse_tag_and_attributes(tag_str: &str) -> nom::IResult<&str, (String, Vec<(S
     separated_pair(parse_tag_name, tag(":"), parse_attributes)(tag_str)
 }
 
-pub(crate) fn parse_variant_stream(variant_stream_str: &str) -> nom::IResult<&str, Tag> {
+fn parse_uri(uri_str: &str) -> nom::IResult<&str, String> {
+    verify(parse_value, |uri: &str| !uri.starts_with("#"))(uri_str)
+}
+
+fn parse_variant_stream(variant_stream_str: &str) -> nom::IResult<&str, Tag> {
     map(
-        separated_pair(parse_tag_and_attributes, tag("\n"), parse_value),
+        pair(parse_tag_and_attributes, parse_uri),
         |((name, attributes), uri)| {
             Tag::TagWithURI(TagWithURI {
                 name,
@@ -69,7 +72,7 @@ fn parse_simple_tag(simple_tag_str: &str) -> nom::IResult<&str, Tag> {
 }
 
 pub(crate) fn parse_master_playlist(playlist_str: &str) -> nom::IResult<&str, Vec<Tag>> {
-    many1(preceded(
+    all_consuming(many1(preceded(
         multispace0,
         terminated(
             alt((
@@ -79,7 +82,7 @@ pub(crate) fn parse_master_playlist(playlist_str: &str) -> nom::IResult<&str, Ve
             )),
             multispace0,
         ),
-    ))(playlist_str)
+    )))(playlist_str)
 }
 
 #[cfg(test)]
@@ -95,16 +98,6 @@ mod tests {
         let parsed = parse_master_playlist(&contents);
 
         println!("{:#?}", parsed);
-    }
-
-    #[test]
-    fn strips_whitespace() {}
-
-    #[test]
-    fn strips_hash() {
-        let tag = "#EXTM3U\n";
-        let parsed = parse_tag_name(tag);
-        println!("{:?}", parsed);
     }
 
     #[test]

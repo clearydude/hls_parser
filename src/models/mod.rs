@@ -12,6 +12,16 @@ pub(crate) struct TagWithURI {
     pub(crate) uri: String,
 }
 
+impl From<(String, Vec<(String, String)>, String)> for TagWithURI {
+    fn from((name, attributes, uri): (String, Vec<(String, String)>, String)) -> Self {
+        Self {
+            name,
+            attributes,
+            uri,
+        }
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub(crate) struct TagWithAttributes {
     pub(crate) name: String,
