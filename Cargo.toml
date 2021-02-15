@@ -5,7 +5,7 @@ authors = ["Katie Cleary <katie@tpfs.io>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 nom = "6.1"
 reqwest = { version = "0.11", features = ["blocking"] }
+thiserror = "1.0"
