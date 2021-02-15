@@ -1,6 +1,4 @@
 mod nom_parser;
-#[cfg(test)]
-mod tests;
 
 use crate::errors::{Error, Result};
 use crate::models::Tag;

@@ -1,26 +1,24 @@
-use derive_new::new;
-
-#[derive(Debug, PartialEq, new)]
+#[derive(Debug, PartialEq)]
 pub(crate) enum Tag {
     TagWithAttributes(TagWithAttributes),
     TagWithURI(TagWithURI),
     BasicTag(BasicTag),
 }
 
-#[derive(Debug, PartialEq, new)]
+#[derive(Debug, PartialEq)]
 pub(crate) struct TagWithURI {
-    name: String,
-    attributes: Vec<(String, String)>,
-    uri: String,
+    pub(crate) name: String,
+    pub(crate) attributes: Vec<(String, String)>,
+    pub(crate) uri: String,
 }
 
-#[derive(Debug, PartialEq, new)]
+#[derive(Debug, PartialEq)]
 pub(crate) struct TagWithAttributes {
-    name: String,
-    attributes: Vec<(String, String)>,
+    pub(crate) name: String,
+    pub(crate) attributes: Vec<(String, String)>,
 }
 
-#[derive(Debug, PartialEq, new)]
+#[derive(Debug, PartialEq)]
 pub(crate) struct BasicTag {
-    name: String,
+    pub(crate) name: String,
 }
