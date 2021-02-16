@@ -2,11 +2,11 @@ mod conversions;
 #[cfg(test)]
 mod tests;
 
+use crate::errors::{Error, Result};
 
-
-
-use crate::errors::{Error};
-
+use nom::lib::std::collections::hash_map::RandomState;
+use std::collections::HashMap;
+use std::convert::TryFrom;
 use std::num::ParseIntError;
 
 impl From<ParseIntError> for Error {
@@ -40,7 +40,33 @@ pub(crate) struct VariantStream {
 }
 
 #[derive(Debug, Default)]
-struct MasterPlaylist {
+pub(crate) struct MediaTag {
+    media_type: String,
+    group_id: String,
+    name: String,
+    language: String,
+    // I wanted to get these next two values, default and autoselect
+    // into bool but ran into compiler issues
+    // and apparently rust doesn't automagically convert YES/NO to bools.
+    default: String,
+    autoselect: String,
+    channels: String,
+    uri: String,
+}
+
+#[derive(Debug, Default)]
+pub(crate) struct IFrame {
+    bandwidth: u32,
+    codecs: String,
+    resolution: Resolution,
+    video_range: String,
+    uri: String,
+}
+
+#[derive(Debug, Default)]
+pub(crate) struct MasterPlaylist {
     variant_streams: Vec<VariantStream>,
+    media_tags: Vec<MediaTag>,
+    i_frames: Vec<IFrame>,
     basic_tags: Vec<String>,
 }

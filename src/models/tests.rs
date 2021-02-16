@@ -1,5 +1,6 @@
 use super::*;
-use std::convert::TryInto;
+use std::collections::HashMap;
+use std::convert::TryFrom;
 
 #[test]
 fn builds_variant_stream_from_parser_type() {
@@ -37,7 +38,7 @@ fn builds_variant_stream_from_parser_type() {
 
     let basic_tag = ("EXTM3U".to_string(), None);
 
-    let typed = MasterPlaylist::try_from(vec![
+    let _typed = MasterPlaylist::try_from(vec![
         untyped_variant_stream,
         untyped_variant_stream2,
         basic_tag,

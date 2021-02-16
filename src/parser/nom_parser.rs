@@ -1,7 +1,7 @@
-use nom::character::complete::{multispace0};
+use nom::character::complete::multispace0;
 use nom::combinator::{all_consuming, map, verify};
 use nom::multi::{fold_many0, many1, separated_list1};
-use nom::sequence::{delimited, pair, preceded, separated_pair, terminated};
+use nom::sequence::{delimited, pair, preceded, separated_pair, terminated, tuple};
 
 use nom::branch::alt;
 use nom::bytes::complete::{is_not, tag, take_until};
@@ -9,12 +9,14 @@ use nom::IResult;
 use std::collections::HashMap;
 
 fn parse_value(attr_str: &str) -> nom::IResult<&str, String> {
-    map(is_not(",\n"), |attr: &str| attr.to_string())(attr_str)
+    map(terminated(is_not(",\n"), multispace0), |attr: &str| {
+        attr.to_string()
+    })(attr_str)
 }
 
 fn parse_quoted_value(attr_str: &str) -> nom::IResult<&str, String> {
     map(
-        delimited(tag("\""), is_not("\""), tag("\"")),
+        terminated(delimited(tag("\""), is_not("\""), tag("\"")), multispace0),
         |attr: &str| attr.to_string(),
     )(attr_str)
 }
@@ -32,7 +34,10 @@ fn parse_attribute(attr_str: &str) -> nom::IResult<&str, (String, String)> {
 
 fn parse_attributes(attrs_str: &str) -> nom::IResult<&str, HashMap<String, String>> {
     fold_many0(
-        terminated(separated_list1(tag(","), parse_attribute), multispace0),
+        preceded(
+            tag(":"),
+            terminated(separated_list1(tag(","), parse_attribute), multispace0),
+        ),
         HashMap::new(),
         |mut map, attrs| {
             for (key, value) in attrs {
@@ -52,7 +57,7 @@ fn parse_tag_name(tag_str: &str) -> nom::IResult<&str, String> {
 fn parse_tag_and_attributes(
     tag_str: &str,
 ) -> nom::IResult<&str, (String, HashMap<String, String>)> {
-    separated_pair(parse_tag_name, tag(":"), parse_attributes)(tag_str)
+    pair(parse_tag_name, parse_attributes)(tag_str)
 }
 
 fn parse_uri(uri_str: &str) -> nom::IResult<&str, String> {
@@ -61,43 +66,29 @@ fn parse_uri(uri_str: &str) -> nom::IResult<&str, String> {
 
 fn parse_variant_stream(
     variant_stream_str: &str,
-) -> nom::IResult<&str, (String, Option<HashMap<String, String>>)> {
+) -> nom::IResult<&str, (String, HashMap<String, String>)> {
     map(
-        pair(parse_tag_and_attributes, preceded(multispace0, parse_uri)),
-        |((tag, mut attrs), uri)| {
+        tuple((
+            parse_tag_name,
+            parse_attributes,
+            preceded(multispace0, parse_uri),
+        )),
+        |(tag, mut attrs, uri)| {
             attrs.insert("URI".to_string(), uri);
-            (tag, Some(attrs))
+            (tag, attrs)
         },
     )(variant_stream_str)
 }
 
-// fn parse_tag_with_attributes(tag_w_attributes_str: &str) -> nom::IResult<&str, (String, Option<HashMap<String, String>>)> {
-//     map(parse_tag_and_attributes, |(name, attributes)|
-//         (name, Some(attributes)))(tag_w_attributes_str)
-// }
-//
-fn parse_basic_tag(simple_tag_str: &str) -> nom::IResult<&str, (String, HashMap<String, String>)> {
-    map(parse_tag_name, |name| (name, HashMap::new()))(simple_tag_str)
-}
-//
-// pub(crate) fn parse_master_playlist(playlist_str: &str) -> nom::IResult<&str, Vec<(String, Option<HashMap<String, String>>)>> {
-//     all_consuming(many1(
-//         terminated(
-//             alt((
-//                 parse_variant_stream,
-//                 parse_tag_with_attributes,
-//                 parse_basic_tag,
-//             )),
-//             multispace0,
-//         ),
-//     ))(playlist_str)
-// }
-
+// Note: I did try to get this to return an Option<HashMap> in the case of tags with no
+// attributes but I couldn't get the parser to play nice in the time that I had.
+// An optional hashmap here would be better than returning an empty hashmap if the tag
+// has no associated attributes.
 pub(crate) fn parse_master_playlist(
     playlist_str: &str,
 ) -> IResult<&str, Vec<(String, HashMap<String, String>)>> {
     all_consuming(many1(terminated(
-        alt((parse_tag_and_attributes, parse_basic_tag)),
+        alt((parse_variant_stream, parse_tag_and_attributes)),
         multispace0,
     )))(playlist_str)
 }
@@ -156,7 +147,7 @@ mod tests {
 
     #[test]
     fn parses_all_tags() {
-        let tags_str = "#EXTM3U\n#EXT-X-INDEPENDENT-SEGMENTS\n\n#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID=\"aac-128k\",NAME=\"English\",LANGUAGE=\"en\",DEFAULT=YES,AUTOSELECT=YES,CHANNELS=\"2\",URI=\"audio/unenc/aac_128k/vod.m3u8\"\n\n#EXT-X-STREAM-INF:BANDWIDTH=2483789,AVERAGE-BANDWIDTH=1762745,CODECS=\"mp4a.40.2,hvc1.2.4.L90.90\",RESOLUTION=960x540,FRAME-RATE=23.97,VIDEO-RANGE=PQ,AUDIO=\"aac-128k\",CLOSED-CAPTIONS=NONE\nhdr10/unenc/1650k/vod.m3u8\n\n#EXT-X-I-FRAME-STREAM-INF:BANDWIDTH=222552,CODECS=\"hvc1.2.4.L93.90\",RESOLUTION=1280x720,VIDEO-RANGE=PQ,URI=\"hdr10/unenc/3300k/vod-iframe.m3u8\"\n\n";
+        let tags_str = "#EXTM3U\n#EXT-X-INDEPENDENT-SEGMENTS\n\n#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID=\"aac-64k\",NAME=\"English\",LANGUAGE=\"en\",DEFAULT=YES,AUTOSELECT=YES,CHANNELS=\"2\",URI=\"audio/unenc/aac_64k/vod.m3u8\"\n\n#EXT-X-STREAM-INF:BANDWIDTH=2312764,AVERAGE-BANDWIDTH=1919803,CODECS=\"ec-3,hvc1.2.4.L63.90\",RESOLUTION=640x360,FRAME-RATE=23.97,VIDEO-RANGE=PQ,AUDIO=\"atmos\",CLOSED-CAPTIONS=NONE\nhdr10/unenc/900k/vod.m3u8\n\n#EXT-X-I-FRAME-STREAM-INF:BANDWIDTH=77758,CODECS=\"hvc1.2.4.L63.90\",RESOLUTION=640x360,VIDEO-RANGE=PQ,URI=\"hdr10/unenc/900k/vod-iframe.m3u8\"\n\n";
 
         let parsed = parse_master_playlist(tags_str);
 
@@ -184,17 +175,14 @@ mod tests {
             parsed,
             Ok((
                 "",
-                (
-                    "EXT-X-STREAM-INF".to_string(),
-                    Some(get_variant_attrs_with_uri())
-                )
+                ("EXT-X-STREAM-INF".to_string(), get_variant_attrs_with_uri())
             ))
         )
     }
 
     #[test]
     fn parses_i_frame_attribute_list_into_key_value_map() {
-        let attr_str = "BANDWIDTH=77758,CODECS=\"hvc1.2.4.L63.90\",RESOLUTION=640x360,VIDEO-RANGE=PQ,URI=\"hdr10/unenc/900k/vod-iframe.m3u8\"";
+        let attr_str = ":BANDWIDTH=77758,CODECS=\"hvc1.2.4.L63.90\",RESOLUTION=640x360,VIDEO-RANGE=PQ,URI=\"hdr10/unenc/900k/vod-iframe.m3u8\"";
 
         let parsed = parse_attributes(attr_str);
 
@@ -203,7 +191,7 @@ mod tests {
 
     #[test]
     fn parses_media_attribute_list_into_key_value_map() {
-        let attr_str = "TYPE=AUDIO,GROUP-ID=\"aac-64k\",NAME=\"English\",LANGUAGE=\"en\",DEFAULT=YES,AUTOSELECT=YES,CHANNELS=\"2\",URI=\"audio/unenc/aac_64k/vod.m3u8\"";
+        let attr_str = ":TYPE=AUDIO,GROUP-ID=\"aac-64k\",NAME=\"English\",LANGUAGE=\"en\",DEFAULT=YES,AUTOSELECT=YES,CHANNELS=\"2\",URI=\"audio/unenc/aac_64k/vod.m3u8\"";
 
         let parsed = parse_attributes(attr_str);
 
@@ -212,7 +200,7 @@ mod tests {
 
     #[test]
     fn parses_variant_stream_attribute_list_into_key_value_map() {
-        let attr_str = "BANDWIDTH=2312764,AVERAGE-BANDWIDTH=1919803,CODECS=\"ec-3,hvc1.2.4.L63.90\",RESOLUTION=640x360,FRAME-RATE=23.97,VIDEO-RANGE=PQ,AUDIO=\"atmos\",CLOSED-CAPTIONS=NONE";
+        let attr_str = ":BANDWIDTH=2312764,AVERAGE-BANDWIDTH=1919803,CODECS=\"ec-3,hvc1.2.4.L63.90\",RESOLUTION=640x360,FRAME-RATE=23.97,VIDEO-RANGE=PQ,AUDIO=\"atmos\",CLOSED-CAPTIONS=NONE";
         let parsed = parse_attributes(attr_str);
 
         assert_eq!(parsed, Ok(("", get_variant_stream_attributes())))

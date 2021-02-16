@@ -1,5 +1,7 @@
 use crate::api_client::{ApiClient, BlockingApiClient};
+use crate::models::MasterPlaylist;
 use crate::parser::HLSParser;
+use std::convert::TryInto;
 
 mod api_client;
 mod errors;
@@ -21,8 +23,8 @@ fn main() {
 
     let parser = HLSParser {};
 
-    println!(
-        "{:#?}",
-        parser.parse(&api_client.get_master_playlist().unwrap())
-    );
+    let parsed = parser.parse(&api_client.get_master_playlist().unwrap());
+    let master_playlist: MasterPlaylist = parsed.unwrap().try_into().unwrap();
+
+    println!("{:#?}", master_playlist);
 }
