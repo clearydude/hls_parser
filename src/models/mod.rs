@@ -2,11 +2,8 @@ mod conversions;
 #[cfg(test)]
 mod tests;
 
-use crate::errors::{Error, Result};
+use crate::errors::Error;
 
-use nom::lib::std::collections::hash_map::RandomState;
-use std::collections::HashMap;
-use std::convert::TryFrom;
 use std::num::ParseIntError;
 
 impl From<ParseIntError> for Error {
@@ -39,7 +36,7 @@ pub(crate) struct VariantStream {
     closed_captions: String,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, PartialEq, Ord, PartialOrd, Eq, Default)]
 pub(crate) struct MediaTag {
     media_type: String,
     group_id: String,
@@ -54,7 +51,7 @@ pub(crate) struct MediaTag {
     uri: String,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, PartialEq, Ord, PartialOrd, Eq, Default)]
 pub(crate) struct IFrame {
     bandwidth: u32,
     codecs: String,
@@ -63,7 +60,7 @@ pub(crate) struct IFrame {
     uri: String,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, PartialEq, Default)]
 pub(crate) struct MasterPlaylist {
     variant_streams: Vec<VariantStream>,
     media_tags: Vec<MediaTag>,

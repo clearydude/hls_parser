@@ -1,7 +1,7 @@
 use crate::errors::{Error, Result};
 use crate::models::{IFrame, MasterPlaylist, MediaTag, Resolution, VariantStream};
 use std::collections::HashMap;
-use std::convert::{TryFrom, TryInto};
+use std::convert::TryFrom;
 
 impl TryFrom<String> for Resolution {
     type Error = Error;
@@ -173,6 +173,12 @@ impl TryFrom<Vec<(String, HashMap<String, String>)>> for MasterPlaylist {
                 }
             }
         }
+
+        // Sort everything now while we've got mutable refs
+        variant_streams.sort();
+        i_frames.sort();
+        media_tags.sort();
+        basic_tags.sort();
 
         Ok(Self {
             variant_streams,

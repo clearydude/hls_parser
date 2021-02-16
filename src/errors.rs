@@ -2,7 +2,7 @@ use thiserror::Error;
 
 pub(crate) type Result<T, E = Error> = std::result::Result<T, E>;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq)]
 pub(crate) enum Error {
     #[error("API Error: {0}")]
     HTTP(String),
