@@ -2,11 +2,11 @@ mod conversions;
 #[cfg(test)]
 mod tests;
 
-use std::collections::HashMap;
-use std::convert::TryFrom;
 
-use crate::errors::{Error, Result};
-use nom::lib::std::collections::hash_map::RandomState;
+
+
+use crate::errors::{Error};
+
 use std::num::ParseIntError;
 
 impl From<ParseIntError> for Error {

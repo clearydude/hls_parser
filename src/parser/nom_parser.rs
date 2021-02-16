@@ -1,6 +1,6 @@
-use nom::character::complete::{multispace0, multispace1};
+use nom::character::complete::{multispace0};
 use nom::combinator::{all_consuming, map, verify};
-use nom::multi::{fold_many0, fold_many1, many1, separated_list1};
+use nom::multi::{fold_many0, many1, separated_list1};
 use nom::sequence::{delimited, pair, preceded, separated_pair, terminated};
 
 use nom::branch::alt;

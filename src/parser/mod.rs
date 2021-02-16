@@ -16,7 +16,7 @@ impl HLSParser {
     /// Takes a string representing an HLS file and parses it into a list of Tags
     pub(crate) fn parse(
         &self,
-        hls_str: &str,
+        _hls_str: &str,
     ) -> Result<Vec<(String, Option<HashMap<String, String>>)>> {
         // let (_, res) = parse_master_playlist(hls_str)?;
         //
