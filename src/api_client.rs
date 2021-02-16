@@ -12,6 +12,8 @@ pub(crate) struct BlockingApiClient {}
 
 /// This trait represents the behavior we need from an Api Client.
 pub(crate) trait ApiClient {
+    // This didn't end up being necessary since I didn't have time to use it but usually for
+    // testing purposes I like to put a mock here, hence the use of a trait!
     /// Retrieve a master playlist and return its contents as a String.
     fn get_master_playlist(&self) -> Result<String>;
 }

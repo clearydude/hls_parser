@@ -52,6 +52,34 @@ fn rejects_bad_media_tag() {
     assert!(matches!(typed.unwrap_err(), Error::HLSFormat { .. }))
 }
 
+#[test]
+fn rejects_bad_media_type() {
+    let (tag, mut attrs) = given_a_parsed_media_tag();
+    attrs.insert("TYPE".to_string(), "NOTAREALTYPE".to_string());
+    let bad_tag = vec![(tag, attrs)];
+
+    let typed = MasterPlaylist::try_from(bad_tag);
+
+    assert!(matches!(typed.unwrap_err(), Error::HLSFormat { .. }))
+}
+
+fn given_a_parsed_media_tag() -> (String, HashMap<String, String>) {
+    let mut media_attributes = HashMap::new();
+    media_attributes.insert("TYPE".to_string(), "AUDIO".to_string());
+    media_attributes.insert("GROUP-ID".to_string(), "aac-64k".to_string());
+    media_attributes.insert("NAME".to_string(), "English".to_string());
+    media_attributes.insert("LANGUAGE".to_string(), "en".to_string());
+    media_attributes.insert("DEFAULT".to_string(), "YES".to_string());
+    media_attributes.insert("AUTOSELECT".to_string(), "YES".to_string());
+    media_attributes.insert("CHANNELS".to_string(), "2".to_string());
+    media_attributes.insert(
+        "URI".to_string(),
+        "audio/unenc/aac_64k/vod.m3u8".to_string(),
+    );
+
+    ("EXT-X-MEDIA".to_string(), media_attributes)
+}
+
 fn given_parsed_types_of_each_tag() -> Vec<(String, HashMap<String, String>)> {
     let mut variant_stream_attributes = HashMap::new();
     variant_stream_attributes.insert("BANDWIDTH".to_string(), "2483789".to_string());
@@ -69,20 +97,7 @@ fn given_parsed_types_of_each_tag() -> Vec<(String, HashMap<String, String>)> {
 
     let variant_stream = ("EXT-X-STREAM-INF".to_string(), variant_stream_attributes);
 
-    let mut media_attributes = HashMap::new();
-    media_attributes.insert("TYPE".to_string(), "AUDIO".to_string());
-    media_attributes.insert("GROUP-ID".to_string(), "aac-64k".to_string());
-    media_attributes.insert("NAME".to_string(), "English".to_string());
-    media_attributes.insert("LANGUAGE".to_string(), "en".to_string());
-    media_attributes.insert("DEFAULT".to_string(), "YES".to_string());
-    media_attributes.insert("AUTOSELECT".to_string(), "YES".to_string());
-    media_attributes.insert("CHANNELS".to_string(), "2".to_string());
-    media_attributes.insert(
-        "URI".to_string(),
-        "audio/unenc/aac_64k/vod.m3u8".to_string(),
-    );
-
-    let media_tag = ("EXT-X-MEDIA".to_string(), media_attributes);
+    let media_tag = given_a_parsed_media_tag();
 
     let mut i_frame_attributes = HashMap::new();
     i_frame_attributes.insert("BANDWIDTH".to_string(), "77758".to_string());
@@ -111,7 +126,7 @@ impl VariantStream {
                 width: 11960,
                 height: 55540,
             },
-            video_range: "PQ".to_string(),
+            video_range: VideoRange::PQ,
             frame_rate: "23.97".to_string(),
             audio: "aac-128k".to_string(),
             closed_captions: "NONE".to_string(),
@@ -122,7 +137,7 @@ impl VariantStream {
 impl MediaTag {
     fn example() -> Self {
         Self {
-            media_type: "AUDIO".to_string(),
+            media_type: MediaType::Audio,
             group_id: "aac-64k".to_string(),
             name: "English".to_string(),
             language: "en".to_string(),
@@ -143,7 +158,7 @@ impl IFrame {
                 width: 640,
                 height: 360,
             },
-            video_range: "PQ".to_string(),
+            video_range: VideoRange::PQ,
             uri: "hdr10/unenc/900k/vod-iframe.m3u8".to_string(),
         }
     }

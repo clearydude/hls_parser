@@ -1,7 +1,9 @@
 use crate::errors::{Error, Result};
-use crate::models::{IFrame, MasterPlaylist, MediaTag, Resolution, VariantStream};
+use crate::models::{
+    IFrame, MasterPlaylist, MediaTag, MediaType, Resolution, VariantStream, VideoRange,
+};
 use std::collections::HashMap;
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
 
 impl TryFrom<String> for Resolution {
     type Error = Error;
@@ -27,6 +29,38 @@ impl TryFrom<String> for Resolution {
     }
 }
 
+impl TryFrom<&String> for MediaType {
+    type Error = Error;
+
+    fn try_from(media_type: &String) -> Result<Self> {
+        match media_type.as_str() {
+            "CLOSED-CAPTIONS" => Ok(MediaType::ClosedCaptions),
+            "AUDIO" => Ok(MediaType::Audio),
+            "VIDEO" => Ok(MediaType::Video),
+            "SUBTITLES" => Ok(MediaType::Subtitles),
+            _ => Err(Error::HLSFormat(format!(
+                "Invalid media type specified: {}",
+                media_type
+            ))),
+        }
+    }
+}
+
+impl TryFrom<&String> for VideoRange {
+    type Error = Error;
+
+    fn try_from(video_range: &String) -> Result<Self> {
+        match video_range.as_str() {
+            "PQ" => Ok(VideoRange::PQ),
+            "SDR" => Ok(VideoRange::SDR),
+            _ => Err(Error::HLSFormat(format!(
+                "Invalid video range specified: {}",
+                video_range
+            ))),
+        }
+    }
+}
+
 impl TryFrom<HashMap<String, String>> for MediaTag {
     type Error = Error;
 
@@ -35,7 +69,7 @@ impl TryFrom<HashMap<String, String>> for MediaTag {
             media_type: attributes
                 .get("TYPE")
                 .ok_or(Error::HLSFormat("HLS missing TYPE".to_string()))?
-                .clone(),
+                .try_into()?,
             group_id: attributes
                 .get("GROUP-ID")
                 .ok_or(Error::HLSFormat("HLS missing GROUP-ID".to_string()))?
@@ -90,7 +124,7 @@ impl TryFrom<HashMap<String, String>> for IFrame {
             video_range: attributes
                 .get("VIDEO-RANGE")
                 .ok_or(Error::HLSFormat("HLS missing VIDEO-RANGE".to_string()))?
-                .clone(),
+                .try_into()?,
             uri: attributes
                 .get("URI")
                 .ok_or(Error::HLSFormat("HLS missing URI".to_string()))?
@@ -131,7 +165,7 @@ impl TryFrom<HashMap<String, String>> for VariantStream {
             video_range: attributes
                 .get("VIDEO-RANGE")
                 .ok_or(Error::HLSFormat("HLS missing VIDEO-RANGE".to_string()))?
-                .clone(),
+                .try_into()?,
             frame_rate: attributes
                 .get("FRAME-RATE")
                 .ok_or(Error::HLSFormat("HLS missing FRAME-RATE".to_string()))?
