@@ -37,7 +37,7 @@ enum VideoRange {
 
 #[derive(Debug, PartialEq, Ord, PartialOrd, Eq)]
 /// A variant stream is a set of renditions that can be combined to play a media presentation.
-pub(crate) struct VariantStream {
+pub struct VariantStream {
     /// A media playlist that carries a rendition of this variant stream.
     uri: String,
     /// The peak segment bit rate in bits per second.
@@ -74,7 +74,7 @@ enum MediaType {
 #[derive(Debug, PartialEq, Ord, PartialOrd, Eq)]
 /// A media tag is used to relate media playlists that contain alternative Renditions of the same
 /// content.
-pub(crate) struct MediaTag {
+pub struct MediaTag {
     /// The type of media specified by this media tag.
     media_type: MediaType,
     /// Associates this media item with its group.
@@ -99,7 +99,7 @@ pub(crate) struct MediaTag {
 
 #[derive(Debug, PartialEq, Ord, PartialOrd, Eq)]
 /// A media playlist containing the I-frames of a multimedia presentation.
-pub(crate) struct IFrame {
+pub struct IFrame {
     /// The average segment bit rate in bits per second.
     bandwidth: u32,
     /// A comma seperated list of formats.
@@ -114,9 +114,9 @@ pub(crate) struct IFrame {
 
 #[derive(Debug, PartialEq, Default)]
 /// A set of variant streams, each of which describes a different version of the same content.
-pub(crate) struct MasterPlaylist {
-    variant_streams: Vec<VariantStream>,
-    media_tags: Vec<MediaTag>,
-    i_frames: Vec<IFrame>,
-    basic_tags: Vec<String>,
+pub struct MasterPlaylist {
+    pub variant_streams: Vec<VariantStream>,
+    pub media_tags: Vec<MediaTag>,
+    pub i_frames: Vec<IFrame>,
+    pub basic_tags: Vec<String>,
 }

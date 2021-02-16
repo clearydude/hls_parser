@@ -11,7 +11,9 @@ To use this HLS parser, you must have [Rust](https://www.rust-lang.org/tools/ins
 
 ## Usage
 
-To run the parser, simply use `cargo run` in the hls_parser directory.
+To run the parser, use `cargo run` in the hls_parser directory. This will build and run the binary.
+
+There are also some tests! You can run those by using `cargo test` in the hls_parser directory. 
 
 ## Stretch Goals
 
@@ -19,4 +21,4 @@ I wanted to make a fancy CLI with different sorting options but learning how to 
 
 I would also like to have some better error handling so that when we read in an invalid piece of HLS we can give a clearer message about what's gone wrong where.
 
-
+Also there are never enough tests. This would have been fun to use some [Property](https://github.com/AltSysrq/proptest) [Based](https://github.com/BurntSushi/quickcheck) testing here.
