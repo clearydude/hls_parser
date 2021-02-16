@@ -1,5 +1,5 @@
 use crate::errors::{Error, Result};
-use crate::models::{Resolution, VariantStream};
+use crate::models::{MasterPlaylist, Resolution, VariantStream};
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
