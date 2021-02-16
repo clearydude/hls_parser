@@ -2,7 +2,7 @@ use crate::errors::{Result, *};
 
 impl From<reqwest::Error> for Error {
     fn from(e: reqwest::Error) -> Self {
-        Error::APIError(e.to_string())
+        Error::HTTP(e.to_string())
     }
 }
 

@@ -6,7 +6,7 @@ use nom_parser::parse_master_playlist;
 
 impl From<nom::Err<nom::error::Error<&str>>> for Error {
     fn from(e: nom::Err<nom::error::Error<&str>>) -> Self {
-        Error::ParseError(e.to_string())
+        Error::Parse(e.to_string())
     }
 }
 
